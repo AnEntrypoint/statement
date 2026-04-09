@@ -53,7 +53,7 @@ export async function setup(token) {
     enable('apikeys.googleapis.com')
   ]);
 
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < 20; attempt++) {
     const kl = await fetch(`https://apikeys.googleapis.com/v2/projects/${projNum}/locations/global/keys`, { headers: H() }).then(r => r.json());
     const existing = kl.keys?.find(k => k.displayName === 'gemoci');
     if (existing) {
@@ -67,7 +67,7 @@ export async function setup(token) {
     });
     const kd = await kc.json();
     if (kc.status === 403 && JSON.stringify(kd).includes('not been used')) {
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise(r => setTimeout(r, 6000));
       continue;
     }
     if (!kc.ok) throw new Error(`Key create ${kc.status}: ${JSON.stringify(kd).slice(0, 200)}`);
@@ -75,5 +75,5 @@ export async function setup(token) {
     if (!kop.response?.keyString) throw new Error(`Key op missing keyString: ${JSON.stringify(kop).slice(0, 200)}`);
     return kop.response.keyString;
   }
-  throw new Error('Key create failed after 5 attempts: apikeys API propagation timeout');
+  throw new Error('Key create failed after 20 attempts (120s): apikeys API propagation timeout');
 }
