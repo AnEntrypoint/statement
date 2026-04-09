@@ -16,10 +16,10 @@ function render() {
 }
 
 function showErr(msg) {
-  el('error-msg').textContent = msg;
-  el('error-msg').hidden = false;
   window.__state.phase = window.__state.key ? 'has-key' : 'no-key';
   render();
+  el('error-msg').textContent = msg;
+  el('error-msg').hidden = false;
 }
 
 el('set-key-btn').addEventListener('click', () => {
