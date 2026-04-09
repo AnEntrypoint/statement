@@ -53,16 +53,18 @@ export async function setup(token) {
     enable('apikeys.googleapis.com')
   ]);
 
+  const AK = () => ({ ...H(), 'x-goog-user-project': projNum });
+
   for (let attempt = 0; attempt < 20; attempt++) {
-    const kl = await fetch(`https://apikeys.googleapis.com/v2/projects/${projNum}/locations/global/keys`, { headers: H() }).then(r => r.json());
+    const kl = await fetch(`https://apikeys.googleapis.com/v2/projects/${projNum}/locations/global/keys`, { headers: AK() }).then(r => r.json());
     const existing = kl.keys?.find(k => k.displayName === 'gemoci');
     if (existing) {
-      const ks = await fetch(`https://apikeys.googleapis.com/v2/${existing.name}/keyString`, { headers: H() }).then(r => r.json());
+      const ks = await fetch(`https://apikeys.googleapis.com/v2/${existing.name}/keyString`, { headers: AK() }).then(r => r.json());
       if (!ks.keyString) throw new Error(`getKeyString failed: ${JSON.stringify(ks).slice(0, 200)}`);
       return ks.keyString;
     }
     const kc = await fetch(`https://apikeys.googleapis.com/v2/projects/${projNum}/locations/global/keys`, {
-      method: 'POST', headers: H(),
+      method: 'POST', headers: AK(),
       body: JSON.stringify({ displayName: 'gemoci', restrictions: { apiTargets: [{ service: 'generativelanguage.googleapis.com' }] } })
     });
     const kd = await kc.json();

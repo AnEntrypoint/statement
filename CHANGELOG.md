@@ -23,3 +23,5 @@
 - Fix: narrow project search to derived projectId to prevent matching unrelated project with gemoci:1 label
 - Fix: retry key create up to 20x with 6s delay when apikeys API returns 403 "not been used" (GCP propagation lag up to 120s)
 - Fix: revert model to gemini-2.0-flash (gemini-3-flash-preview does not exist)
+- Fix: add x-goog-user-project header to all apikeys.googleapis.com calls to route quota through user's GCP project instead of OAuth app project
+- Fix: remove duplicate content in src/setup.js (file was doubled)

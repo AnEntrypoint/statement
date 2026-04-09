@@ -28,6 +28,7 @@ OAuth client ID: `873801679825-ss0jff8jhitvm1v7pj2chh4qdlg108ob.apps.googleuserc
 6. List API keys — find key with `displayName='gemoci'`; if found, call getKeyString
 7. If not found: create key restricted to `generativelanguage.googleapis.com`, poll operation, return `keyString`
 8. Key create/list retries up to 20× with 6s delay — GCP apikeys API takes up to 120s to propagate after enable
+9. All `apikeys.googleapis.com` calls send `x-goog-user-project: projNum` header — without it GCP routes quota through the OAuth app's project (which hasn't enabled apikeys), causing 403
 
 All steps throw with clear messages on failure. No fallbacks.
 
