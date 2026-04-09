@@ -19,3 +19,4 @@
 - Add src/setup.js: idempotently provisions GCP project + enables Generative Language API + creates restricted API key
 - State machine: no-auth → setting-up → has-key → processing
 - Update CLAUDE.md to reflect OAuth + auto-provisioning architecture
+- Fix: enable apikeys.googleapis.com via serviceusage before calling API Keys API (was returning 403)
