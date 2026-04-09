@@ -53,21 +53,27 @@ export async function setup(token) {
     enable('apikeys.googleapis.com')
   ]);
 
-  const kl = await fetch(`https://apikeys.googleapis.com/v2/projects/${projNum}/locations/global/keys`, { headers: H() }).then(r => r.json());
-  const existing = kl.keys?.find(k => k.displayName === 'gemoci');
-  if (existing) {
-    const ks = await fetch(`https://apikeys.googleapis.com/v2/${existing.name}/keyString`, { headers: H() }).then(r => r.json());
-    if (!ks.keyString) throw new Error(`getKeyString failed: ${JSON.stringify(ks).slice(0, 200)}`);
-    return ks.keyString;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const kl = await fetch(`https://apikeys.googleapis.com/v2/projects/${projNum}/locations/global/keys`, { headers: H() }).then(r => r.json());
+    const existing = kl.keys?.find(k => k.displayName === 'gemoci');
+    if (existing) {
+      const ks = await fetch(`https://apikeys.googleapis.com/v2/${existing.name}/keyString`, { headers: H() }).then(r => r.json());
+      if (!ks.keyString) throw new Error(`getKeyString failed: ${JSON.stringify(ks).slice(0, 200)}`);
+      return ks.keyString;
+    }
+    const kc = await fetch(`https://apikeys.googleapis.com/v2/projects/${projNum}/locations/global/keys`, {
+      method: 'POST', headers: H(),
+      body: JSON.stringify({ displayName: 'gemoci', restrictions: { apiTargets: [{ service: 'generativelanguage.googleapis.com' }] } })
+    });
+    const kd = await kc.json();
+    if (kc.status === 403 && JSON.stringify(kd).includes('not been used')) {
+      await new Promise(r => setTimeout(r, 3000));
+      continue;
+    }
+    if (!kc.ok) throw new Error(`Key create ${kc.status}: ${JSON.stringify(kd).slice(0, 200)}`);
+    const kop = await poll(`https://apikeys.googleapis.com/v2/${kd.name}`, token);
+    if (!kop.response?.keyString) throw new Error(`Key op missing keyString: ${JSON.stringify(kop).slice(0, 200)}`);
+    return kop.response.keyString;
   }
-
-  const kc = await fetch(`https://apikeys.googleapis.com/v2/projects/${projNum}/locations/global/keys`, {
-    method: 'POST', headers: H(),
-    body: JSON.stringify({ displayName: 'gemoci', restrictions: { apiTargets: [{ service: 'generativelanguage.googleapis.com' }] } })
-  });
-  const kd = await kc.json();
-  if (!kc.ok) throw new Error(`Key create ${kc.status}: ${JSON.stringify(kd).slice(0, 200)}`);
-  const kop = await poll(`https://apikeys.googleapis.com/v2/${kd.name}`, token);
-  if (!kop.response?.keyString) throw new Error(`Key op missing keyString: ${JSON.stringify(kop).slice(0, 200)}`);
-  return kop.response.keyString;
+  throw new Error('Key create failed after 5 attempts: apikeys API propagation timeout');
 }

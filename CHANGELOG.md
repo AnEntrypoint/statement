@@ -21,3 +21,5 @@
 - Update CLAUDE.md to reflect OAuth + auto-provisioning architecture
 - Fix: enable apikeys.googleapis.com via serviceusage before calling API Keys API (was returning 403)
 - Fix: narrow project search to derived projectId to prevent matching unrelated project with gemoci:1 label
+- Fix: retry key create up to 5x with 3s delay when apikeys API returns 403 "not been used" (GCP propagation lag)
+- Fix: revert model to gemini-2.0-flash (gemini-3-flash-preview does not exist)
