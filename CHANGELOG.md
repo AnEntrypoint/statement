@@ -12,3 +12,5 @@
 - Fix: removed async from GSI script tag to prevent ReferenceError: google is not defined
 - Fix: replace invalid generative-language OAuth scope with cloud-platform
 - Refactor: replace Google OAuth with user-provided Gemini API key; remove GSI dependency
+- Fix: model name corrected from gemini-2.0-flash-preview to gemini-2.0-flash (preview variant not available in v1beta)
+- Fix: error message was hidden by render() call inside showErr; fixed ordering so error shows after render

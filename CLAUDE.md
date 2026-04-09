@@ -6,7 +6,7 @@ Static SPA — no server. Runs entirely in the browser.
 
 - `index.html` — entry point, loads JSZip CDN, mounts `src/app.js` as ES module
 - `src/app.js` — API key state machine, UI events, orchestrates ocr+ods
-- `src/ocr.js` — Gemini 2.0 Flash REST call with API key query param
+- `src/ocr.js` — Gemini 2.0 Flash REST call (`gemini-2.0-flash` model) with API key query param
 - `src/ods.js` — builds ODS (OpenDocument Spreadsheet) blob via JSZip
 
 ## Auth
