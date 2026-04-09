@@ -1,42 +1,57 @@
 import { ocr } from './ocr.js';
+import { setup } from './setup.js';
 import { buildOds, download } from './ods.js';
 
-window.__state = { key: null, file: null, phase: 'no-key' };
+const CLIENT_ID = '873801679825-ss0jff8jhitvm1v7pj2chh4qdlg108ob.apps.googleusercontent.com';
+
+window.__state = { phase: 'no-auth', key: null, email: null, file: null };
+window.__debug = () => window.__state;
 
 function el(id) { return document.getElementById(id); }
 
 function render() {
-  const { phase, file } = window.__state;
-  el('key-panel').hidden = phase !== 'no-key';
-  el('main-panel').hidden = phase === 'no-key';
+  const { phase, file, email } = window.__state;
+  el('login-panel').hidden = phase !== 'no-auth';
+  el('setup-panel').hidden = phase !== 'setting-up';
+  el('main-panel').hidden = phase !== 'has-key' && phase !== 'processing';
   el('spinner').hidden = phase !== 'processing';
   el('process-btn').disabled = phase === 'processing' || !file;
   el('error-msg').hidden = true;
+  if (email) el('user-email').textContent = email;
   if (file) el('file-name').textContent = file.name;
 }
 
 function showErr(msg) {
-  window.__state.phase = window.__state.key ? 'has-key' : 'no-key';
+  window.__state.phase = window.__state.key ? 'has-key' : 'no-auth';
   render();
   el('error-msg').textContent = msg;
   el('error-msg').hidden = false;
 }
 
-el('set-key-btn').addEventListener('click', () => {
-  const val = el('key-input').value.trim();
-  if (!val) { showErr('Enter a Gemini API key'); return; }
-  window.__state.key = val;
-  window.__state.phase = 'has-key';
-  el('key-input').value = '';
-  render();
+const client = google.accounts.oauth2.initTokenClient({
+  client_id: CLIENT_ID,
+  scope: 'email https://www.googleapis.com/auth/cloud-platform',
+  callback: async (resp) => {
+    if (resp.error) { showErr(`Sign-in failed: ${resp.error}`); return; }
+    window.__state.phase = 'setting-up';
+    render();
+    try {
+      const key = await setup(resp.access_token);
+      const ti = await fetch(`https://www.googleapis.com/oauth2/v2/tokeninfo?access_token=${resp.access_token}`).then(r => r.json());
+      window.__state.key = key;
+      window.__state.email = ti.email;
+      window.__state.phase = 'has-key';
+      render();
+    } catch (err) {
+      showErr(err.message);
+    }
+  }
 });
 
-el('key-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') el('set-key-btn').click();
-});
+el('login-btn').addEventListener('click', () => client.requestAccessToken());
 
-el('clear-key-btn').addEventListener('click', () => {
-  window.__state = { key: null, file: null, phase: 'no-key' };
+el('sign-out-btn').addEventListener('click', () => {
+  window.__state = { phase: 'no-auth', key: null, email: null, file: null };
   render();
 });
 
@@ -69,7 +84,7 @@ el('process-btn').addEventListener('click', async () => {
     download(blob, `ocr-result-${Date.now()}.ods`);
     window.__state.phase = 'has-key';
     render();
-  } catch(err) {
+  } catch (err) {
     showErr(err.message);
   }
 });

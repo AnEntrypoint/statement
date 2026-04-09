@@ -4,26 +4,37 @@ Static SPA — no server. Runs entirely in the browser.
 
 ## Architecture
 
-- `index.html` — entry point, loads JSZip CDN, mounts `src/app.js` as ES module
-- `src/app.js` — API key state machine, UI events, orchestrates ocr+ods
+- `index.html` — entry point, loads GSI + JSZip CDN, mounts `src/app.js` as ES module
+- `src/app.js` — OAuth state machine (no-auth → setting-up → has-key → processing), UI events, orchestrates setup+ocr+ods
+- `src/setup.js` — idempotently provisions a Gemini API key via GCP APIs using OAuth token
 - `src/ocr.js` — Gemini 3 Flash REST call (`gemini-3-flash-preview` model) with API key query param
 - `src/ods.js` — builds ODS (OpenDocument Spreadsheet) blob via JSZip
 
 ## Auth
 
-No Google OAuth. User pastes their own Gemini API key into a password input. Key stored in `window.__state.key` (memory only, cleared on page reload or "Clear key"). State machine: `no-key` → `has-key` → `processing`.
+Google Sign-In (GSI token client) with `cloud-platform + email` scope. On sign-in, `setup(token)` runs the GCP provisioning chain. Key stored in `window.__state.key` (memory only, cleared on sign-out or reload).
 
-Gemini API key auth: `?key=<apiKey>` query param on the endpoint URL. No Authorization header.
+State machine phases: `no-auth` → `setting-up` → `has-key` → `processing`.
 
-The Generative Language API does not support user OAuth tokens for `generateContent` — only API keys work. Do not attempt to add OAuth scopes for this API.
+OAuth client ID: `873801679825-ss0jff8jhitvm1v7pj2chh4qdlg108ob.apps.googleusercontent.com` (Web Application type in project `gemini-50279`, JS origin `https://lockhatinc.github.io`).
+
+## Setup chain (src/setup.js)
+
+1. Resolve email from tokeninfo endpoint
+2. Derive deterministic `projectId = 'gemoci-' + 8charBase64EmailHash`
+3. Search CRM v3 for project with label `gemoci:1` — reuse if found
+4. If not found: create project, poll operation until done; 409 → GET existing by projectId
+5. Enable `generativelanguage.googleapis.com` via serviceusage (idempotent)
+6. List API keys — find key with `displayName='gemoci'`; if found, call getKeyString
+7. If not found: create key restricted to `generativelanguage.googleapis.com`, poll operation, return `keyString`
+
+All steps throw with clear messages on failure. No fallbacks.
+
+## Gemini API auth
+
+`?key=<apiKey>` query param on the endpoint URL. No Authorization header. OAuth tokens cannot be used for `generateContent` — API key provisioning is the workaround.
 
 ## Deploy
 
-GitHub Actions Pages deployment (workflow source, not gh-pages branch). No secrets required.
+GitHub Actions Pages deployment (workflow source, not gh-pages branch). No secrets required. Client ID baked into `src/app.js`.
 Live URL: `https://lockhatinc.github.io/statement/`
-
-## Google Cloud setup
-
-1. Enable the Generative Language API for the project
-2. Create an API key in Credentials
-3. Users obtain their own API key from https://aistudio.google.com/apikey

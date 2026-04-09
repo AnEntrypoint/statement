@@ -15,3 +15,7 @@
 - Fix: model name corrected from gemini-2.0-flash-preview to gemini-2.0-flash (preview variant not available in v1beta)
 - Fix: error message was hidden by render() call inside showErr; fixed ordering so error shows after render
 - Upgrade: switch model to gemini-3-flash-preview (latest available)
+- Restore Google OAuth sign-in (GSI token client, cloud-platform + email scope)
+- Add src/setup.js: idempotently provisions GCP project + enables Generative Language API + creates restricted API key
+- State machine: no-auth → setting-up → has-key → processing
+- Update CLAUDE.md to reflect OAuth + auto-provisioning architecture
