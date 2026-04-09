@@ -20,3 +20,4 @@
 - State machine: no-auth → setting-up → has-key → processing
 - Update CLAUDE.md to reflect OAuth + auto-provisioning architecture
 - Fix: enable apikeys.googleapis.com via serviceusage before calling API Keys API (was returning 403)
+- Fix: narrow project search to derived projectId to prevent matching unrelated project with gemoci:1 label
