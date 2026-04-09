@@ -6,7 +6,7 @@ OCR any image to an OpenDocument Spreadsheet using Gemini 2.0 Flash, with Google
 
 ## How it works
 
-1. Sign in with Google — grants access to the Gemini Generative Language API under your account
+1. Sign in with Google — uses the `cloud-platform` OAuth scope to access the Gemini API under your account
 2. Drop or select an image (max 15 MB)
 3. Click **Extract & Download ODS** — Gemini extracts the data, the browser builds and downloads the `.ods` file
 
@@ -23,7 +23,7 @@ No server. All processing runs in your browser using your OAuth token.
 ### GitHub Actions deploy
 
 Add a repository secret named `GOOGLE_CLIENT_ID` with the OAuth client ID value.  
-Push to `main` → GitHub Actions injects the ID and deploys to `gh-pages`.
+Push to `main` → GitHub Actions injects the ID and deploys via GitHub Actions Pages.
 
 ### Local dev
 

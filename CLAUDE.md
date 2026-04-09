@@ -13,9 +13,11 @@ Static SPA — no server. Runs entirely in the browser.
 
 Google Identity Services (GSI) implicit token flow. No backend. Token stored in `window.__state.token` (memory only, cleared on sign-out/page reload).
 
+OAuth scope: `https://www.googleapis.com/auth/cloud-platform` — the `generative-language` scope does not exist and causes `invalid_scope`. GSI script must not have `async` attribute or the module executes before GSI loads.
+
 ## Deploy
 
-GitHub Actions → `peaceiris/actions-gh-pages@v4` → `gh-pages` branch of `lockhatinc/statement`.
+GitHub Actions Pages deployment (workflow source, not gh-pages branch).
 Required GitHub secret: `GOOGLE_CLIENT_ID`.
 Live URL: `https://lockhatinc.github.io/statement/`
 
@@ -24,4 +26,5 @@ Live URL: `https://lockhatinc.github.io/statement/`
 1. Create OAuth 2.0 Client ID (Web application type)
 2. Add `https://lockhatinc.github.io` as authorized JS origin
 3. Enable the Generative Language API
-4. Add `GOOGLE_CLIENT_ID` as a GitHub Actions secret
+4. Add `cloud-platform` scope to OAuth consent screen Data Access
+5. Add `GOOGLE_CLIENT_ID` as a GitHub Actions secret
