@@ -18,7 +18,8 @@ function cellXml(cell, isHeader) {
   }
   if (cell.t === 'f') {
     const f = cell.f.replace(/^of:/, '');
-    return `<table:table-cell${style} table:formula="${esc(f)}" office:value-type="float"><text:p>${esc(cell.d ?? '')}</text:p></table:table-cell>`;
+    const val = cell.v != null ? ` office:value="${cell.v}"` : '';
+    return `<table:table-cell${style} table:formula="${esc(f)}" office:value-type="float"${val}><text:p>${esc(cell.d ?? '')}</text:p></table:table-cell>`;
   }
   return `<table:table-cell${style} office:value-type="string"><text:p>${esc(cell.v ?? '')}</text:p></table:table-cell>`;
 }
