@@ -1,17 +1,23 @@
 const MODEL = 'gemini-3.1-flash-lite-preview';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 const MAX_BYTES = 20 * 1024 * 1024;
-const PROMPT = `Convert this document into a spreadsheet. Layout rules:
-- If it is a bank statement or financial document:
-  - First rows: account metadata as [Field, Value, "", "", ""] — account holder, account number, statement period, opening balance, closing balance
-  - One empty separator row
-  - One row with transaction column labels: ["", "", "Date", "Description", "Debit (R)", "Credit (R)", "Balance (R)"] (or equivalent currency)
-  - Transaction rows: ["", "", date, description, debit or "", credit or "", balance]
-  - Leave debit cell empty if credit transaction and vice versa (do not write 0,00)
-  - Clean descriptions: remove only trailing OCR artifacts like isolated "R", "Rr", "Gr" at the very end, but preserve account numbers and meaningful text
-- For any other document: use meaningful column headers and put each data row as a row
-Return ONLY valid JSON: {"headers": ["Field","Value","Date","Description","Debit (R)","Credit (R)","Balance (R)"], "rows": [...]}.
-Root must have exactly "headers" and "rows". All values strings. No nested objects.`;
+const PROMPT = `Convert this document into a spreadsheet.
+
+If it is a bank statement or financial document, use this exact structure:
+- Rows 1-5: account metadata — each row is [field_name, value, "", "", "", "", ""]
+  Fields: Account Holder, Account Number, Statement Period, Opening Balance, Closing Balance
+- Row 6: empty separator ["","","","","","",""]
+- Row 7: transaction column headers ["","","Date","Description","Debit (R)","Credit (R)","Balance (R)"]
+- Rows 8+: one transaction per row ["","",date,description,debit,credit,balance]
+  - Leave debit empty string for credit transactions, leave credit empty string for debit transactions
+  - Do NOT write "0,00" in empty cells
+  - Preserve descriptions exactly as they appear — keep words like "Grade R", "Acc 1234", names
+  - Only remove duplicate trailing characters that are clearly OCR noise (e.g. trailing "Rr" doubled)
+
+For any other document: use meaningful column headers and one data row per line item.
+
+Return ONLY valid JSON: {"headers":["Field","Value","Date","Description","Debit (R)","Credit (R)","Balance (R)"],"rows":[...]}
+All values must be strings. No nested objects.`;
 
 async function toBase64(file) {
   return new Promise((res, rej) => {
