@@ -8,8 +8,11 @@ function el(id) { return document.getElementById(id); }
 
 function render() {
   const { phase, file } = window.__state;
-  el('key-panel').hidden = phase !== 'no-key';
-  el('main-panel').hidden = phase === 'no-key';
+  const hasKey = phase !== 'no-key';
+  el('api-key').readOnly = hasKey;
+  el('api-key').classList.toggle('set', hasKey);
+  el('clear-btn').hidden = !hasKey;
+  el('main-panel').hidden = !hasKey;
   el('spinner').hidden = phase !== 'processing';
   el('process-btn').disabled = phase === 'processing' || !file;
   el('error-msg').hidden = true;
@@ -23,17 +26,33 @@ function showErr(msg) {
   el('error-msg').hidden = false;
 }
 
-el('key-btn').addEventListener('click', () => {
-  const key = el('api-key').value.trim();
-  if (!key) { showErr('Enter an API key'); return; }
+function setKey(key) {
+  if (!key) return;
   window.__state.key = key;
   window.__state.phase = 'has-key';
+  localStorage.setItem('gemoci_key', key);
+  el('api-key').value = key;
   render();
+}
+
+const saved = localStorage.getItem('gemoci_key');
+if (saved) setKey(saved);
+else render();
+
+el('api-key').addEventListener('change', () => {
+  const key = el('api-key').value.trim();
+  if (key) setKey(key);
 });
 
-el('api-key').addEventListener('keydown', e => { if (e.key === 'Enter') el('key-btn').click(); });
+el('api-key').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const key = el('api-key').value.trim();
+    if (key) setKey(key);
+  }
+});
 
 el('clear-btn').addEventListener('click', () => {
+  localStorage.removeItem('gemoci_key');
   window.__state = { phase: 'no-key', key: null, file: null };
   el('api-key').value = '';
   render();
@@ -72,5 +91,3 @@ el('process-btn').addEventListener('click', async () => {
     showErr(err.message);
   }
 });
-
-render();
