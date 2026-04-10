@@ -54,4 +54,4 @@
 - Improvement: page-break stitching rule clarified — date comes from originating page, skip continuation fragments
 - Improvement: LAYOUT directive replaces COMPLETENESS — explicit top-to-bottom reading order captures header blocks, section headings, address blocks, footers as rows
 - Fix: NUMBERS section reverted to exact-match document format — no artificial +/- prefixes added to display strings
-- Fix: ods.js normalises ODS formula prefix — accepts formulas with or without `of:` prefix, never doubles it
+- Fix: prompt now specifies ODS as output format and uses `of:=` in all formula examples — model outputs correct ODS formula syntax natively; ods.js passes formula string through without prefix manipulation
