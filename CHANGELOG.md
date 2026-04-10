@@ -31,7 +31,7 @@
 - Fix: remove generative-language OAuth scope — it is a restricted scope that Google consent screen rejects; cloud-platform is sufficient for Gemini Bearer auth
 - Fix: restore generative-language scope — required for generateContent; unverified app works for test users explicitly added in OAuth consent screen
 
-## 2026-04-10
+## 2026-04-10 (continued)
 
 - Refactor: replace Google OAuth + GCP provisioning with user-provided API key (aistudio.google.com/apikey); removes GSI dependency and OAuth scope restrictions entirely
 - Delete src/setup.js — GCP project provisioning no longer needed
@@ -42,3 +42,9 @@
 - Localize jszip.min.js — remove CDN dependency, serve from same origin
 - UX: remove "Use this key"/"Change key" buttons; key auto-saves on enter/blur, persists in localStorage, masked once set; single "Clear" button to reset
 - Feature: accept PDF files in addition to images; increase size limit to 20MB
+- Feature: multi-sheet ODS output — one sheet per page
+- Feature: formula detection — running balance columns output as =D{n}+C{n+1} ODS formulas
+- Feature: numeric/currency cells as ODS float (office:value-type="float") with display text
+- Feature: layout reproduction — prompt instructs model to preserve original visual structure
+- Feature: page-break row stitching — split transaction rows merged onto originating page
+- UX: step-by-step instructions with direct aistudio.google.com/api-keys link; dropzone mentions PDF
