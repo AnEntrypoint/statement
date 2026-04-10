@@ -24,8 +24,7 @@ function contentXml(headers, rows) {
 const MANIFEST = `<?xml version="1.0" encoding="UTF-8"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.2"><manifest:file-entry manifest:full-path="/" manifest:media-type="${MIME}"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>`;
 
 export async function buildOds(headers, rows) {
-  const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js')).default;
-  const zip = new JSZip();
+  const zip = new window.JSZip();
   zip.file('mimetype', MIME, { compression: 'STORE' });
   zip.folder('META-INF').file('manifest.xml', MANIFEST);
   zip.file('content.xml', contentXml(headers, rows));
