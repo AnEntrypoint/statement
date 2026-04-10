@@ -17,7 +17,8 @@ function cellXml(cell, isHeader) {
     return `<table:table-cell${style} office:value-type="float" office:value="${cell.v}"><text:p>${esc(cell.d ?? cell.v)}</text:p></table:table-cell>`;
   }
   if (cell.t === 'f') {
-    return `<table:table-cell${style} table:formula="of:${esc(cell.f)}" office:value-type="float"><text:p>${esc(cell.d ?? '')}</text:p></table:table-cell>`;
+    const f = cell.f.startsWith('of:') ? cell.f : `of:${cell.f}`;
+    return `<table:table-cell${style} table:formula="${esc(f)}" office:value-type="float"><text:p>${esc(cell.d ?? '')}</text:p></table:table-cell>`;
   }
   return `<table:table-cell${style} office:value-type="string"><text:p>${esc(cell.v ?? '')}</text:p></table:table-cell>`;
 }
