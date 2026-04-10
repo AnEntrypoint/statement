@@ -2,7 +2,32 @@ const MODEL = 'gemini-3.1-flash-lite-preview';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 const MAX_BYTES = 20 * 1024 * 1024;
 
-const PROMPT = `Convert this document into a spreadsheet. One sheet per page.
+const PROMPT_PAGEBREAKS = `This document spans multiple pages. I need to detect rows that are split across page breaks.
+
+At each page boundary, look carefully at both sides:
+- End of page N: what is the very last data row in the table? Write out every cell verbatim.
+- Start of page N+1: what is the very first line of content in the table area (ignoring repeated headers)? Does it have a date in the first cell, or does it start with a description/fragment with no date?
+
+A split row is when: the last row on page N has a date but its description is generic/truncated (e.g. just "Direct Credit" with no name), AND the first line on page N+1 is a dateless fragment that reads like a description continuation (a name, account number, or text that clearly belongs to that transaction).
+
+Return ONLY valid JSON:
+{"splits": [{"at_page": 1, "row_on_pageN": ["cell1","cell2","cell3","cell4"], "fragment_on_pageN1": "verbatim dateless first line on next page, or null if none", "merged_row": ["merged cell1","merged cell2","merged cell3","merged cell4"]}]}
+
+If no splits exist, return {"splits": []}`;
+
+function buildMainPrompt(splits) {
+  let stitchContext = '';
+  if (splits && splits.length > 0) {
+    const lines = splits.map(s => {
+      if (s.fragment_on_pageN1 && s.merged_row) {
+        return `- Page ${s.at_page} last row: the row ${JSON.stringify(s.row_on_pageN)} is SPLIT. The fragment "${s.fragment_on_pageN1}" at the top of page ${s.at_page + 1} belongs to it. Use the merged row ${JSON.stringify(s.merged_row)} as the last row on page ${s.at_page}. Page ${s.at_page + 1} must NOT contain this fragment.`;
+      }
+      return null;
+    }).filter(Boolean);
+    if (lines.length) stitchContext = `\nKNOWN PAGE-BREAK SPLITS — apply these exactly:\n${lines.join('\n')}\n`;
+  }
+
+  return `Convert this document into a spreadsheet. One sheet per page.
 
 Return ONLY valid JSON — no markdown, no explanation:
 {"pages":[{"name":"Page 1","headers":[...],"rows":[[...],...]},{"name":"Page 2",...}]}
@@ -17,12 +42,11 @@ COMPLETENESS — include every visible element from the document:
 - Reproduce the layout: label-value pairs become two-cell rows; tables become rows with matching columns
 - All text verbatim — do not alter, correct, or clean any text
 - Blank cells: ""; blank rows: []
-
-PAGE-BREAK STITCHING — handle split rows precisely:
-- A split row is one that starts on page N but its remaining columns (amount, balance, or description continuation) appear at the top of page N+1 before any new dated row
-- Merge the pieces: place the complete merged row (with all columns filled) as the last data row on page N, using the date from page N
-- Page N+1 must begin with its own first complete independent row — do NOT include the merged row again or any fragment of it
-- Do not confuse a description continuation at the top of page N+1 with the first row of page N+1; the first actual new row on page N+1 has its own date
+${stitchContext}
+PAGE-BREAK STITCHING — handle split rows:
+- A fragment at the top of page N+1 with no date is the continuation of the last row on page N
+- Merge it: complete last row on page N, remove the fragment from page N+1
+- Page N+1 starts with its own first independent row (which has its own date)
 
 NUMBERS — every pure numeric value must be a number object with exact display text from the document.
 
@@ -32,6 +56,7 @@ FORMULAS — when a cell's value is derived from other cells in the same sheet:
 - Row numbers in formulas must match actual row indices in the JSON output (1 = first rows[] entry)
 - Totals: {"type":"formula","formula":"=SUM(C2:C15)","display":"..."}
 - Cross-page first row: use a number object (no cross-sheet references)`;
+}
 
 async function toBase64(file) {
   return new Promise((res, rej) => {
@@ -79,15 +104,13 @@ function normalize(parsed) {
   throw new Error(`Unrecognised response shape: ${JSON.stringify(parsed).slice(0, 200)}`);
 }
 
-export async function ocr(file, key) {
-  if (file.size > MAX_BYTES) throw new Error(`File too large: ${(file.size/1024/1024).toFixed(1)}MB exceeds 20MB limit`);
-  const data = await toBase64(file);
+async function callGemini(key, parts, jsonMode) {
   const res = await fetch(`${ENDPOINT}?key=${encodeURIComponent(key)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{ parts: [{ inline_data: { mime_type: file.type, data } }, { text: PROMPT }] }],
-      generation_config: { response_mime_type: 'application/json' }
+      contents: [{ parts }],
+      ...(jsonMode ? { generation_config: { response_mime_type: 'application/json' } } : {})
     })
   });
   if (!res.ok) {
@@ -97,6 +120,25 @@ export async function ocr(file, key) {
   const json = await res.json();
   const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error(`Gemini returned no text: ${JSON.stringify(json).slice(0, 300)}`);
+  return text;
+}
+
+export async function ocr(file, key) {
+  if (file.size > MAX_BYTES) throw new Error(`File too large: ${(file.size/1024/1024).toFixed(1)}MB exceeds 20MB limit`);
+  const data = await toBase64(file);
+  const inlineData = { inline_data: { mime_type: file.type, data } };
+
+  let splits = [];
+  try {
+    const probeText = await callGemini(key, [inlineData, { text: PROMPT_PAGEBREAKS }], true);
+    const probeClean = probeText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    splits = JSON.parse(probeClean).splits || [];
+  } catch (e) {
+    // probe failure is non-fatal — proceed without stitch context
+  }
+
+  const mainPrompt = buildMainPrompt(splits);
+  const text = await callGemini(key, [inlineData, { text: mainPrompt }], true);
   const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   return normalize(JSON.parse(cleaned));
 }
