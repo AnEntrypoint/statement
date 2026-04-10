@@ -29,3 +29,4 @@
 - Refactor: setup.js now returns { token, projNum } instead of API key string; ocr.js uses Authorization Bearer header; apikeys.googleapis.com dependency removed entirely
 - Fix: add generative-language OAuth scope — cloud-platform alone is insufficient for generateContent, causes 403 ACCESS_TOKEN_SCOPE_INSUFFICIENT
 - Fix: remove generative-language OAuth scope — it is a restricted scope that Google consent screen rejects; cloud-platform is sufficient for Gemini Bearer auth
+- Fix: restore generative-language scope — required for generateContent; unverified app works for test users explicitly added in OAuth consent screen
