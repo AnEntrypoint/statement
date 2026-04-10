@@ -54,3 +54,4 @@
 - Improvement: page-break stitching rule clarified — date comes from originating page, skip continuation fragments
 - Improvement: LAYOUT directive replaces COMPLETENESS — explicit top-to-bottom reading order captures header blocks, section headings, address blocks, footers as rows
 - Fix: NUMBERS section reverted to exact-match document format — no artificial +/- prefixes added to display strings
+- Fix: strip `of:` prefix from formula strings if model includes it, preventing doubled `of:of:=` in ODS output

@@ -80,7 +80,7 @@ function coerce(cell) {
   if (typeof cell === 'number') return { t: 'n', v: cell, d: String(cell) };
   if (typeof cell === 'object') {
     if (cell.type === 'number') return { t: 'n', v: Number(cell.value), d: cell.display || String(cell.value) };
-    if (cell.type === 'formula') return { t: 'f', f: cell.formula, d: cell.display || '' };
+    if (cell.type === 'formula') return { t: 'f', f: cell.formula.replace(/^of:/, ''), d: cell.display || '' };
     if (cell.type === 'string') return { t: 's', v: String(cell.value ?? '') };
   }
   return { t: 's', v: String(cell) };
