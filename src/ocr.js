@@ -37,22 +37,29 @@ CELL TYPES:
 - Number: {"type":"number","value":1234.56,"display":"1 234,56"}
 - Formula: {"type":"formula","formula":"=B2+C2","display":"1 234,56"}
 
-COMPLETENESS — include every visible element from the document:
-- Every header, label, metadata field, value, row, section, footer — nothing omitted
-- Reproduce the layout: label-value pairs become two-cell rows; tables become rows with matching columns
-- All text verbatim — do not alter, correct, or clean any text
-- Blank cells: ""; blank rows: []
+LAYOUT — reproduce every visible element top-to-bottom, left-to-right, exactly as it appears:
+- Read the page from top to bottom. Every element you see becomes a row.
+- Header area (logo, address blocks, date ranges, reference numbers): each line → one row, text in col A
+- Section headings (e.g. "Transaction history", "Account summary"): one row with that text in col A
+- Label-value pairs: two-cell row — label in col A, value in col B
+- Tables: header row + one data row per table row, cells aligned to table columns
+- Footers and notes at the bottom of the page: each line → one row
+- Blank lines between sections → blank row []
+- Nothing omitted — if you can see it, it must be in the output
+- All text verbatim — do not alter, correct, or normalise any text
 ${stitchContext}
 PAGE-BREAK STITCHING — handle split rows:
 - A fragment at the top of page N+1 with no date is the continuation of the last row on page N
 - Merge it: complete last row on page N, remove the fragment from page N+1
 - Page N+1 starts with its own first independent row (which has its own date)
 
-NUMBERS — every pure numeric value must be a number object with exact display text from the document.
+NUMBERS — every pure numeric value must be a number object:
+- Display string must exactly match the document — preserve the original formatting verbatim
+- Do not add + or - prefixes that are not present in the source document
 
 FORMULAS — when a cell's value is derived from other cells in the same sheet:
 - Number rows in your output starting at 1 for the first row of this page
-- Running balance (balance[n] = balance[n-1] + amount[n]): seed is a number, each next row is a formula. Balance in col D, amount in col C, row 8: {"type":"formula","formula":"=D7+C8","display":"..."}
+- Running balance (balance[n] = balance[n-1] + amount[n]): Seed is a number, each next row is a formula. Balance in col D, amount in col C, row 8: {"type":"formula","formula":"=D7+C8","display":"..."}
 - Row numbers in formulas must match actual row indices in the JSON output (1 = first rows[] entry)
 - Totals: {"type":"formula","formula":"=SUM(C2:C15)","display":"..."}
 - Cross-page first row: use a number object (no cross-sheet references)`;
@@ -134,7 +141,6 @@ export async function ocr(file, key) {
     const probeClean = probeText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     splits = JSON.parse(probeClean).splits || [];
   } catch (e) {
-    // probe failure is non-fatal — proceed without stitch context
   }
 
   const mainPrompt = buildMainPrompt(splits);

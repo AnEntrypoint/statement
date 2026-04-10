@@ -52,3 +52,5 @@
 - Fix: null cell coercion now returns empty string instead of throwing
 - Fix: formula row numbers now correctly 1-based from first output row, accounting for metadata rows
 - Improvement: page-break stitching rule clarified — date comes from originating page, skip continuation fragments
+- Improvement: LAYOUT directive replaces COMPLETENESS — explicit top-to-bottom reading order captures header blocks, section headings, address blocks, footers as rows
+- Fix: NUMBERS section reverted to exact-match document format — no artificial +/- prefixes added to display strings
