@@ -34,10 +34,12 @@ Running balance columns output as formulas. Currency values as float cells. Bold
 
 ## Prompt
 
-- One sheet per page, preserving original layout structure
-- Page-break row stitching: split rows merged onto originating page
-- Formula detection: running balance = `=D{prev}+C{cur}`, totals as SUM formulas
-- All metadata fields extracted verbatim; descriptions preserved verbatim
+Two-step pipeline: probe call detects cross-page split rows → main call injects merged rows as ground-truth context.
+
+- LAYOUT directive: explicit top-to-bottom reading order — every visible element (header blocks, address areas, section headings, table rows, footers) becomes a row. "COMPLETENESS" alone was insufficient; the model skipped non-table content without the explicit ordering instruction.
+- Page-break row stitching: split rows merged onto originating page; fragment removed from page N+1
+- Formula detection: running balance = `=D{prev}+C{cur}`, totals as SUM formulas; row numbers are 1-based from first `rows[]` entry including metadata rows
+- Number display strings preserved verbatim from document — no artificial sign prefixes added
 
 ## Deploy
 
