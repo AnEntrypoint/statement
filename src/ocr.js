@@ -1,4 +1,4 @@
-const MODEL = 'gemini-2.0-flash-exp';
+const MODEL = 'gemini-3.1-flash-lite-preview';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 const MAX_BYTES = 15 * 1024 * 1024;
 const PROMPT = 'Extract all data from this image into a JSON structure. Return ONLY valid JSON, no markdown, no explanation. Format: {"headers": ["col1", "col2"], "rows": [["val1", "val2"]]}. If no table exists, use headers:[] and put each text line as a single-element row. All values must be strings.';
