@@ -1,7 +1,7 @@
 const MODEL = 'gemini-3.1-flash-lite-preview';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 const MAX_BYTES = 20 * 1024 * 1024;
-const PROMPT = 'Extract all data from this document into a table. Return ONLY valid JSON in this exact format: {"headers": ["col1", "col2"], "rows": [["val1", "val2"]]}. The root object MUST have exactly two keys: "headers" (array of strings) and "rows" (array of arrays of strings). No other format. No nested objects. If the document has no table, use headers:[] and put each line of text as a single-element row. All values must be strings.';
+const PROMPT = 'Convert this document into a well-structured spreadsheet. Think about what layout would be most useful in a spreadsheet application — use meaningful column headers, put transaction/line-item data in rows, group related fields logically. Return ONLY valid JSON in this exact format: {"headers": ["col1", "col2"], "rows": [["val1", "val2"]]}. The root object MUST have exactly two keys: "headers" (array of strings) and "rows" (array of arrays of strings). No nested objects. All values must be strings.';
 
 async function toBase64(file) {
   return new Promise((res, rej) => {
