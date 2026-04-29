@@ -1,5 +1,5 @@
 # Gemoci
-
+ 
 OCR any image to an OpenDocument Spreadsheet using Gemini AI, with one-click Google sign-in.
 
 **Live**: https://lockhatinc.github.io/statement/
